@@ -1,258 +1,491 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Dawood Khan – Firmware Developer, Cybersecurity Enthusiast, and Creator of CredSniper." />
-  <title>Dawood Khan | Matrix Identity</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-      --bg: #000000;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --accent: #38bdf8;
-      --matrix: #22d3ee;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Dawood Khan – Firmware Developer, Cybersecurity Enthusiast, and Creator of CredSniper." />
+    <title>Dawood Khan | Matrix Identity</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #000000;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #38bdf8;
+            --matrix: #22d3ee;
+            --accent-glow: rgba(56, 189, 248, 0.5);
+            --card-bg: rgba(2, 6, 23, 0.75);
+            --card-border: rgba(56, 189, 248, 0.3);
+            --glass-blur: 12px;
+            /* Chaos colors */
+            --chaos-red: #ff0040;
+            --chaos-glow: rgba(255, 0, 64, 0.8);
+            --chaos-dark: #0a0000;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      font-family: 'Courier New', monospace;
-      background: var(--bg);
-      color: var(--text);
-      overflow-x: hidden;
-    }
+        html { scroll-behavior: smooth; }
 
-    canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
 
-    header {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
-      background: rgba(0,0,0,0.65);
-      animation: fadeIn 2s ease-in;
-    }
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 0;
+            background: var(--accent);
+            color: #000;
+            padding: 0.5rem 1rem;
+            z-index: 10000;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .skip-link:focus { top: 0; }
 
-    @keyframes fadeIn { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+        #matrix-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; }
+        #particle-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
 
-    .hero { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+        #main-nav {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+            padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            background: var(--card-bg); backdrop-filter: blur(var(--glass-blur));
+            border-bottom: 1px solid var(--card-border);
+            transform: translateY(-100%); transition: transform 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        #main-nav.visible { transform: translateY(0); }
+        .nav-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        .nav-links a {
+            color: var(--muted); text-decoration: none; font-weight: bold;
+            font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover, .nav-links a.active { color: var(--accent); text-shadow: 0 0 8px var(--accent-glow); }
 
-    .profile-pic {
-      width:160px;
-      height:160px;
-      border-radius:50%;
-      border:2px solid var(--accent);
-      box-shadow:0 0 25px rgba(56,189,248,0.6);
-      object-fit:cover;
-      background:#020617;
-      animation: popIn 1s ease-out;
-    }
+        .menu-toggle {
+            display: none; background: none; border: 1px solid var(--card-border);
+            color: var(--accent); font-size: 1.5rem; width: 40px; height: 40px;
+            cursor: pointer; align-items: center; justify-content: center;
+        }
 
-    @keyframes popIn { 0% { transform: scale(0); opacity:0; } 100% { transform: scale(1); opacity:1; } }
+        @media (max-width: 768px) {
+            .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; background: var(--card-bg); backdrop-filter: blur(16px); padding: 1rem; gap: 1rem; border-bottom: 1px solid var(--card-border); }
+            .nav-links.show { display: flex; }
+            .menu-toggle { display: flex; }
+        }
 
-    h1 {
-      font-size: clamp(2.2rem,6vw,3.8rem);
-      text-shadow:0 0 15px rgba(56,189,248,0.7);
-      animation: glowText 3s infinite alternate;
-    }
+        /* ========== CHAOTIC HERO ========== */
+        #home {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 2rem; position: relative; z-index: 1;
+            background: radial-gradient(circle at center, rgba(10,0,0,0.9), rgba(0,0,0,0.98));
+            backdrop-filter: blur(4px);
+        }
 
-    @keyframes glowText { from { text-shadow:0 0 10px rgba(56,189,248,0.4); } to { text-shadow:0 0 25px rgba(56,189,248,1); } }
+        .chaos-noise {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.08"/></svg>');
+            pointer-events: none; z-index: 0; animation: noiseShift 0.2s infinite steps(3);
+        }
+        @keyframes noiseShift {
+            0% { transform: translate(0,0); } 25% { transform: translate(-2px,1px); }
+            50% { transform: translate(1px,-1px); } 75% { transform: translate(-1px,-2px); }
+            100% { transform: translate(0,0); }
+        }
 
-    p {
-      max-width: 720px;
-      margin:0 auto;
-      color: var(--muted);
-      font-size: 1.05rem;
-      opacity:0;
-      animation: fadeUp 1.5s forwards;
-      animation-delay:1s;
-    }
+        .chaos-scanline {
+            position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--chaos-red), transparent);
+            box-shadow: 0 0 20px var(--chaos-glow); z-index: 2;
+            animation: scanDown 3s linear infinite; pointer-events: none;
+        }
+        @keyframes scanDown {
+            0% { top: -10px; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; }
+        }
 
-    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        .hero { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; position: relative; z-index: 3; }
 
-    section {
-      padding: 5rem 1.5rem;
-      max-width: 1100px;
-      margin: 0 auto;
-      background: rgba(0,0,0,0.65);
-      border-top:1px solid rgba(56,189,248,0.25);
-      animation: sectionFade 1.5s ease-in;
-    }
+        .profile-pic {
+            width: 160px; height: 160px; border-radius: 50%;
+            border: 3px solid var(--chaos-red);
+            box-shadow: 0 0 35px var(--chaos-glow), inset 0 0 20px rgba(255,0,64,0.2);
+            object-fit: cover; background: #020617; transition: transform 0.3s;
+            animation: picFlicker 3s infinite;
+        }
+        .profile-pic:hover { transform: scale(1.1) rotate(-2deg); }
+        @keyframes picFlicker {
+            0%, 100% { opacity: 1; } 5% { opacity: 0.7; } 10% { opacity: 1; }
+            45% { opacity: 1; } 47% { opacity: 0.6; } 50% { opacity: 1; }
+            90% { opacity: 1; } 92% { opacity: 0.8; }
+        }
 
-    @keyframes sectionFade { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+        .glitch {
+            font-size: clamp(2.5rem, 7vw, 4.2rem); font-weight: bold; text-transform: uppercase;
+            position: relative; display: inline-block; color: #fff;
+            text-shadow: 0 0 15px var(--chaos-glow), 0 0 35px rgba(255,0,64,0.5);
+            animation: constantGlitch 1.2s infinite;
+        }
+        .glitch::before, .glitch::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background: var(--bg); color: #fff;
+            overflow: hidden; clip: rect(0, 900px, 0, 0);
+        }
+        .glitch::before {
+            left: 2px; text-shadow: -2px 0 var(--chaos-red);
+            animation: glitch-before 1.5s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px; text-shadow: 2px 0 #00fff9;
+            animation: glitch-after 1.7s infinite linear alternate-reverse;
+        }
+        @keyframes constantGlitch {
+            0%, 100% { transform: translate(0); } 2% { transform: translate(-2px, 1px); }
+            4% { transform: translate(2px, -1px); } 6%, 98% { transform: translate(0); }
+        }
+        @keyframes glitch-before {
+            0% { clip: rect(18px, 9999px, 84px, 0); } 20% { clip: rect(76px, 9999px, 32px, 0); }
+            40% { clip: rect(43px, 9999px, 98px, 0); } 60% { clip: rect(91px, 9999px, 16px, 0); }
+            80% { clip: rect(12px, 9999px, 64px, 0); } 100% { clip: rect(56px, 9999px, 39px, 0); }
+        }
+        @keyframes glitch-after {
+            0% { clip: rect(63px, 9999px, 21px, 0); } 20% { clip: rect(29px, 9999px, 77px, 0); }
+            40% { clip: rect(82px, 9999px, 45px, 0); } 60% { clip: rect(34px, 9999px, 92px, 0); }
+            80% { clip: rect(71px, 9999px, 13px, 0); } 100% { clip: rect(49px, 9999px, 58px, 0); }
+        }
 
-    h2 {
-      font-size:2rem;
-      margin-bottom:2rem;
-      text-align:center;
-      color:var(--accent);
-      text-shadow:0 0 10px rgba(56,189,248,0.5);
-    }
+        .hero-sub {
+            color: #ff4060; font-weight: bold; font-size: 1.2rem; letter-spacing: 0.1em;
+            text-shadow: 0 0 12px var(--chaos-glow); max-width: 700px;
+            border-left: 3px solid var(--chaos-red); padding-left: 1.2rem; text-align: left;
+            animation: fadeInRight 1.5s ease-out;
+        }
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); }
+        }
+.terminal {
+    background: rgba(0,10,0,0.8);
+    border: 1px solid #00ff41;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    font-family: 'Courier New', monospace;
+    min-height: 80px;
+    backdrop-filter: blur(8px);
+    color: #00ff41;
+    text-align: left;
+    box-shadow: 0 0 25px rgba(0,255,65,0.3);
+    width: 100%;
+    max-width: 700px;
+}
+        .typed-cursor { color: var(--chaos-red); }
 
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:1.5rem; }
+        /* Sections (unchanged) */
+        section {
+            padding: 6rem 1.5rem; max-width: 1100px; margin: 0 auto;
+            background: var(--card-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--card-border); border-radius: 16px;
+            margin-top: 2rem; margin-bottom: 2rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        section:hover { box-shadow: 0 0 40px var(--accent-glow); }
 
-    .card {
-      border:1px solid rgba(56,189,248,0.3);
-      padding:1.5rem;
-      background: rgba(2,6,23,0.85);
-      box-shadow:0 0 20px rgba(56,189,248,0.15);
-      transition: transform 0.3s, box-shadow 0.3s;
-      position: relative;
-    }
-    .card:hover { transform: translateY(-8px); box-shadow:0 0 35px rgba(56,189,248,0.5); }
+        h2 {
+            font-size: 2rem; margin-bottom: 2rem; text-align: center;
+            color: var(--accent); text-shadow: 0 0 10px var(--accent-glow);
+        }
 
-    .card i { margin-right:0.5rem; color:var(--accent); transition: transform 0.3s; }
-    .card:hover i { transform: rotate(20deg) scale(1.2); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 
-    /* Project card with image */
-    .project-card {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 1rem;
-    }
-    .project-card img {
-      max-width: 100px;
-      border: 1px solid rgba(56,189,248,0.3);
-      border-radius: 8px;
-    }
-    .project-card .content {
-      flex: 1;
-      min-width: 200px;
-    }
+        .card {
+            background: var(--card-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, transparent, rgba(56,189,248,0.03)); pointer-events: none;
+        }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 0 35px var(--accent-glow); border-color: var(--accent); }
+        .card i { margin-right: 0.5rem; color: var(--accent); transition: transform 0.3s; }
+        .card:hover i { transform: rotate(20deg) scale(1.2); }
 
-    footer { text-align:center; padding:2rem; color:var(--muted); font-size:0.9rem; background: rgba(0,0,0,0.6); }
-    a { color:var(--accent); text-decoration:none; transition: color 0.2s; }
-    a:hover { color:#ffffff; }
+        .project-card { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+        .project-card img { max-width: 100px; border: 1px solid var(--card-border); border-radius: 8px; }
 
-    @media (max-width: 600px) {
-      header { padding: 1rem; }
-      .profile-pic { width:120px; height:120px; }
-      h1 { font-size:2rem; }
-      p { font-size:0.95rem; }
-      .project-card { flex-direction: column; }
-      .project-card img { max-width: 80px; }
-    }
-  </style>
+        .quote-card {
+            padding: 2rem 1.5rem; background: var(--card-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--card-border); border-radius: 12px; position: relative; transition: all 0.3s;
+        }
+        .quote-card::before {
+            content: '\201C'; font-size: 5rem; color: var(--accent); opacity: 0.15;
+            position: absolute; top: -20px; left: 5px; font-family: 'Georgia', serif; line-height: 1;
+        }
+        .quote-card:hover { border-color: var(--accent); box-shadow: 0 0 40px var(--accent-glow); transform: translateY(-5px); }
+        .quote-card i { color: var(--accent); font-size: 1.5rem; margin-bottom: 1rem; }
+        .quote-card p { font-size: 1.15rem; font-style: italic; line-height: 1.5; color: var(--text); margin: 0; }
+
+        footer {
+            text-align: center; padding: 2rem; color: var(--muted); font-size: 0.9rem;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+        }
+        a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+        a:hover { color: #ffffff; }
+
+        .reveal {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { transition: none; opacity: 1; transform: none; }
+            .glitch::before, .glitch::after { animation: none; }
+        }
+    </style>
 </head>
 <body>
 
-<canvas id="matrix"></canvas>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
-<header>
-  <div class="hero">
-      <img src="profile.jpg" alt="Profile Picture" class="profile-pic" />
-    <h1><i class="fas fa-user-astronaut"></i> Dawood Khan</h1>
-    <p><i class="fas fa-code"></i> Operating inside the system: building skills, experimenting with firmware, exploring cybersecurity, and mastering discipline.</p>
-  </div>
+<canvas id="matrix-canvas"></canvas>
+<canvas id="particle-canvas"></canvas>
+
+<nav id="main-nav">
+    <div class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#identity">Identity</a>
+        <a href="#firmware">Firmware</a>
+        <a href="#projects">Projects</a>
+        <a href="#social">Social</a>
+        <a href="#certifications">Certifications</a>
+        <a href="#quotes">Quotes</a>
+        <a href="#contact">Contact</a>
+    </div>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
+</nav>
+
+<!-- CHAOTIC HERO (no black hat mention) -->
+<header id="home">
+    <div class="chaos-noise"></div>
+    <div class="chaos-scanline"></div>
+    <div class="hero">
+       <img src="profile.jpg" alt="Profile Picture" class="profile-pic" />
+        <h1 class="glitch" data-text="Dawood Khan">Dawood Khan</h1>
+        <p class="hero-sub"><i class="fas fa-skull">
+Most people see a screen.
+I see patterns.
+
+Most people see limits.
+I see possibilities.
+
+Silent. Observing. Learning.
+
+The less you know about me,
+the more interesting I become.</i> </p>
+        <div class="terminal" id="typed-terminal"></div>
+    </div>
 </header>
 
-<section>
-  <h2>Identity</h2>
-  <div class="grid">
-    <div class="card"><i class="fas fa-brain"></i> Analytical • Logical • Curious</div>
-    <div class="card"><i class="fas fa-bolt"></i> Self-driven • Discipline-first mindset</div>
-    <div class="card"><i class="fas fa-microchip"></i> Cybersecurity • Electronics • Fitness</div>
-    <div class="card"><i class="fas fa-tools"></i> Builder mindset • Learns by doing</div>
-  </div>
-</section>
-
-<section>
-  <h2>Firmware Development</h2>
-  <div class="grid">
-    <div class="card"><i class="fas fa-microchip"></i> ESP32 & ESP8266 firmware building</div>
-    <div class="card"><i class="fas fa-flask"></i> Experimental projects & testing</div>
-    <div class="card"><i class="fas fa-cogs"></i> Hands-on learning & integration</div>
-  </div>
-</section>
-
-<section>
-  <h2>Projects</h2>
-  <div class="grid">
-    <!-- CredSniper Card -->
-    <div class="card project-card">
-      <img src="https://iili.io/fZQSlIt.md.png" alt="CredSniper Logo" loading="lazy" />
-      <div class="content">
-        <h3 style="color:var(--accent); margin-bottom:0.5rem;">🔐 CredSniper v4.0</h3>
-        <p style="margin-bottom:0.8rem;">Advanced ESP8266 Wi‑Fi security assessment tool for education and authorized testing. Includes Evil Twin, Deauth, Beacon Spam, Router Rescue, and more.</p>
-        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-          <a href="https://github.com/Dawoodkhan5218/CredSniper" target="_blank"><i class="fab fa-github"></i> GitHub</a>
-          <a href="https://github.com/Dawoodkhan5218/CredSniper/wiki" target="_blank"><i class="fas fa-book"></i> Wiki</a>
+<main id="main-content">
+    <section id="identity" class="reveal">
+        <h2>Identity</h2>
+        <div class="grid">
+            <div class="card"><i class="fas fa-brain"></i> Analytical • Logical • Curious</div>
+            <div class="card"><i class="fas fa-bolt"></i> Self-driven • Discipline-first mindset</div>
+            <div class="card"><i class="fas fa-microchip"></i> Cybersecurity • Electronics • Fitness</div>
+            <div class="card"><i class="fas fa-tools"></i> Builder mindset • Learns by doing</div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<section>
-  <h2>Social Engineering Awareness</h2>
-  <div class="grid">
-    <div class="card"><i class="fas fa-user-secret"></i> Human-Factor Analysis</div>
-    <div class="card"><i class="fas fa-shield-alt"></i> Common Attack Vectors (Defensive)</div>
-    <div class="card"><i class="fas fa-handshake"></i> Ethical Application</div>
-  </div>
-</section>
+    <section id="firmware" class="reveal">
+        <h2>Firmware Development</h2>
+        <div class="grid">
+            <div class="card"><i class="fas fa-microchip"></i> ESP32 & ESP8266 firmware building</div>
+            <div class="card"><i class="fas fa-flask"></i> Experimental projects & testing</div>
+            <div class="card"><i class="fas fa-cogs"></i> Hands-on learning & integration</div>
+        </div>
+    </section>
 
-<section>
-  <h2>Certifications</h2>
-  <div class="grid" style="max-width:800px;margin:0 auto;">
-    <div class="card"><i class="fas fa-certificate"></i> Cisco Networking Certificate</div>
-  </div>
-</section>
+    <section id="projects" class="reveal">
+        <h2>Projects</h2>
+        <div class="grid">
+            <div class="card project-card">
+                <img src="https://iili.io/fZQSlIt.md.png" alt="CredSniper Logo" loading="lazy" />
+                <div class="content">
+                    <h3 style="color:var(--accent); margin-bottom:0.5rem;">🔐 CredSniper v4.0</h3>
+                    <p style="margin-bottom:0.8rem;">Advanced ESP8266 Wi‑Fi security assessment tool for education and authorized testing.</p>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                        <a href="https://github.com/Dawoodkhan5218/CredSniper" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+                        <a href="https://github.com/Dawoodkhan5218/CredSniper/wiki" target="_blank"><i class="fas fa-book"></i> Wiki</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-<section>
-  <h2>Motivational Code</h2>
-  <div class="grid">
-    <div class="card"><i class="fas fa-bolt"></i> "Discipline is choosing what you want most over what you want now."</div>
-    <div class="card"><i class="fas fa-fire"></i> "Skills make you independent. Consistency makes you unstoppable."</div>
-    <div class="card"><i class="fas fa-running"></i> "While others wait for motivation, I execute."</div>
-    <div class="card"><i class="fas fa-mask"></i> "Build in silence. Let results speak."</div>
-  </div>
-</section>
+    <section id="social" class="reveal">
+        <h2>Social Engineering Awareness</h2>
+        <div class="grid">
+            <div class="card"><i class="fas fa-user-secret"></i><strong>Human‑Factor Analysis</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Understanding how people think, react, and make decisions under pressure.</p></div>
+            <div class="card"><i class="fas fa-shield-alt"></i><strong>Common Attack Vectors</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Pretexting, baiting, tailgating, phishing, vishing, smishing.</p></div>
+            <div class="card"><i class="fas fa-handshake"></i><strong>Ethical Application</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Only for authorised tests and education.</p></div>
+            <div class="card"><i class="fas fa-brain"></i><strong>Psychological Triggers</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Urgency, fear, authority, scarcity, reciprocity.</p></div>
+            <div class="card"><i class="fas fa-fish"></i><strong>Phishing & Variants</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Spear‑phishing, whaling, vishing, smishing.</p></div>
+            <div class="card"><i class="fas fa-theater-masks"></i><strong>Pretexting & Impersonation</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Believable scenarios to extract info.</p></div>
+            <div class="card"><i class="fas fa-bullhorn"></i><strong>Human Firewall</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Training and verification culture.</p></div>
+            <div class="card"><i class="fas fa-eye"></i><strong>Intuition & Awareness</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Trusting your gut when something feels off.</p></div>
+            <div class="card"><i class="fas fa-book-open"></i><strong>Real‑World Cases</strong><p style="margin-top:0.5rem; font-size:0.9rem; color:var(--muted);">Twitter hack, CEO fraud, and more.</p></div>
+        </div>
+    </section>
 
-<section>
-  <h2>Contact</h2>
-  <div class="grid" style="max-width:700px;margin:0 auto;">
-    <div class="card" style="text-align:center;"><i class="fas fa-envelope"></i> Email: <a href="mailto:dawoodkhan5218@gmail.com">dawoodkhan5218@gmail.com</a></div>
-    <div class="card" style="text-align:center;"><i class="fab fa-github"></i> GitHub: <a href="https://github.com/Dawoodkhan5218" target="_blank">github.com/Dawoodkhan5218</a></div>
-  </div>
-</section>
+    <section id="certifications" class="reveal">
+        <h2>Certifications</h2>
+        <div class="grid" style="max-width:800px;margin:0 auto;">
+            <div class="card"><i class="fas fa-certificate"></i> Cisco Networking Certificate</div>
+        </div>
+    </section>
 
-<footer>© 2026 Dawood Khan</footer>
+    <section id="quotes" class="reveal">
+        <h2>Motivational Code</h2>
+        <div class="grid">
+            <div class="quote-card"><i class="fas fa-bolt"></i><p>"Discipline is choosing what you want most over what you want now."</p></div>
+            <div class="quote-card"><i class="fas fa-fire"></i><p>"Skills make you independent. Consistency makes you unstoppable."</p></div>
+            <div class="quote-card"><i class="fas fa-running"></i><p>"While others wait for motivation, I execute."</p></div>
+            <div class="quote-card"><i class="fas fa-mask"></i><p>"Build in silence. Let results speak."</p></div>
+            <div class="quote-card"><i class="fas fa-hammer"></i><p>"The system is yours to explore, break, and rebuild."</p></div>
+            <div class="quote-card"><i class="fas fa-eye"></i><p>"Intuition is the silent partner of the prepared mind."</p></div>
+            <div class="quote-card"><i class="fas fa-wrench"></i><p>"Hack the code, hack the mind, but always protect the soul."</p></div>
+            <div class="quote-card"><i class="fas fa-user-astronaut"></i><p>"Every line of code you write is a brick in the fortress of your future."</p></div>
+        </div>
+    </section>
 
+    <section id="contact" class="reveal">
+        <h2>Contact</h2>
+        <div class="grid" style="max-width:700px;margin:0 auto;">
+            <div class="card" style="text-align:center;"><i class="fas fa-envelope"></i> Email: <a href="mailto:dawoodkhan5218@gmail.com">dawoodkhan5218@gmail.com</a></div>
+            <div class="card" style="text-align:center;"><i class="fab fa-github"></i> GitHub: <a href="https://github.com/Dawoodkhan5218" target="_blank">github.com/Dawoodkhan5218</a></div>
+        </div>
+    </section>
+</main>
+
+<footer>© 2026 Dawood Khan — Built with discipline and code.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
 <script>
-  const canvas = document.getElementById('matrix');
-  const ctx = canvas.getContext('2d');
-  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-  resize();
-  const matrixColor = getComputedStyle(document.documentElement).getPropertyValue('--matrix').trim();
-  const letters = 'アァカサタナハマヤラワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const fontSize = 16;
-  let columns = Math.floor(canvas.width / fontSize);
-  let drops = Array(columns).fill(1);
-  function draw() {
-    ctx.fillStyle = 'rgba(0,0,0,0.06)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = matrixColor;
-    ctx.font = fontSize + 'px monospace';
-    for (let i = 0; i < drops.length; i++) {
-      const text = letters.charAt(Math.floor(Math.random() * letters.length));
-      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-      drops[i]++;
-    }
-  }
-  setInterval(draw, 33);
-  window.addEventListener('resize', () => {
-    resize();
-    columns = Math.floor(canvas.width / fontSize);
-    drops = Array(columns).fill(1);
-  });
-</script>
+    (function() {
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        let matrixColor = getComputedStyle(document.documentElement).getPropertyValue('--matrix').trim();
+        const letters = 'アァカサタナハマヤラワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 16;
+        let columns, drops;
+        function resizeMatrix() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            columns = Math.floor(canvas.width / fontSize);
+            drops = Array(columns).fill(1);
+        }
+        resizeMatrix();
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0,0,0,0.06)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = matrixColor;
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
 
+        const particleCanvas = document.getElementById('particle-canvas');
+        const pCtx = particleCanvas.getContext('2d');
+        particleCanvas.width = window.innerWidth;
+        particleCanvas.height = window.innerHeight;
+        let particles = [];
+        const mouse = { x: null, y: null };
+        document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.life = 1;
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.life -= 0.02; }
+            draw(ctx) {
+                ctx.fillStyle = `rgba(56,189,248,${this.life})`;
+                ctx.beginPath(); ctx.arc(this.x, this.y, 2, 0, Math.PI*2); ctx.fill();
+            }
+        }
+        function animateParticles() {
+            pCtx.clearRect(0,0,particleCanvas.width,particleCanvas.height);
+            if (mouse.x && mouse.y) {
+                for (let i=0;i<2;i++) particles.push(new Particle(mouse.x, mouse.y));
+            }
+            particles = particles.filter(p=>p.life>0);
+            particles.forEach(p=>{p.update(); p.draw(pCtx);});
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        window.addEventListener('resize', ()=>{
+            resizeMatrix();
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+        });
+
+        const nav = document.getElementById('main-nav');
+        window.addEventListener('scroll', ()=>{
+            nav.classList.toggle('visible', window.scrollY > 300);
+            const sections = document.querySelectorAll('section[id]');
+            let current = '';
+            sections.forEach(sec=>{
+                const top = sec.offsetTop - 100;
+                if (window.scrollY >= top) current = sec.getAttribute('id');
+            });
+            document.querySelectorAll('.nav-links a').forEach(a=>{
+                a.classList.toggle('active', a.getAttribute('href')===`#${current}`);
+            });
+        });
+
+        const menuToggle = document.getElementById('menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        menuToggle.addEventListener('click', ()=> navLinks.classList.toggle('show'));
+        document.querySelectorAll('.nav-links a').forEach(l=> l.addEventListener('click', ()=> navLinks.classList.remove('show')));
+
+/// Terminal – purely mysterious, no hacking
+new Typed('#typed-terminal', {
+    strings: [
+        'guest@observer:~$ whoami<br>> Identity is a shadow. I am the signal between the noise.<br><br>guest@observer:~$ cat /dev/thoughts<br>> Patterns speak louder than words. Silence is my protocol.<br>> Curiosity compiles. Discipline executes.',
+        'guest@observer:~$ cat /etc/echoes<br>> ...I listen to conversations that never reach the ear.<br>> Every glance, every pause, every unspoken word.<br>> The weight of silence carries more truth than noise.<br>> I collect what others overlook.',
+        'guest@observer:~$ ./observe.sh<br>> ...watching without being seen.<br>> Reading between the lines of ordinary moments.<br>> Invisibility is not absence — it is presence undetected.<br>> The quietest observer sees the loudest truths.',
+        'guest@observer:~$ cat /dev/twilight<br>> ...I exist in the space between light and dark.<br>> Where questions hang like stars, unanswered and beautiful.<br>> The unknown is not a void — it is a canvas.<br>> I paint with patience and wait for the picture to emerge.',
+        'guest@observer:~$ ./stillness.sh<br>> ...all motion returns to stillness.<br>> The loudest voice in the room is often the one never raised.<br>> I wait. The world reveals itself to those who stop chasing.<br>> In silence, the universe speaks clearly.'
+    ],
+    typeSpeed: 30,
+    backSpeed: 8,
+    backDelay: 3000,
+    startDelay: 1000,
+    loop: true,
+    showCursor: true,
+    cursorChar: '_',
+});
+        const reveals = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries)=>{
+            entries.forEach(entry=>{
+                if(entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        },{threshold:0.15});
+        reveals.forEach(el=>revealObserver.observe(el));
+    })();
+</script>
 </body>
 </html>
